@@ -1,24 +1,27 @@
 /*
- * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2023 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.integrations.destination.oracle;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
+import io.airbyte.cdk.db.factory.DataSourceFactory;
+import io.airbyte.cdk.db.factory.DatabaseDriver;
+import io.airbyte.cdk.db.jdbc.DefaultJdbcDatabase;
+import io.airbyte.cdk.db.jdbc.JdbcDatabase;
 import io.airbyte.commons.json.Jsons;
-import io.airbyte.db.factory.DataSourceFactory;
-import io.airbyte.db.factory.DatabaseDriver;
-import io.airbyte.db.jdbc.DefaultJdbcDatabase;
-import io.airbyte.db.jdbc.JdbcDatabase;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class NneOracleDestinationAcceptanceTest extends UnencryptedOracleDestinationAcceptanceTest {
 
@@ -41,14 +44,15 @@ public class NneOracleDestinationAcceptanceTest extends UnencryptedOracleDestina
                 config.get("host").asText(),
                 config.get("port").asInt(),
                 config.get("sid").asText()),
-            getAdditionalProperties(algorithm)));
+            getAdditionalProperties(algorithm),
+            Duration.ofMinutes(5)));
 
     final String networkServiceBanner =
         "select network_service_banner from v$session_connect_info where sid in (select distinct sid from v$mystat)";
     final List<JsonNode> collect = database.queryJsons(networkServiceBanner);
 
     assertThat(collect.get(2).get("NETWORK_SERVICE_BANNER").asText(),
-        equals("Oracle Advanced Security: " + algorithm + " encryption"));
+        is(equalTo("AES256 Encryption service adapter for Linux: Version 18.0.0.0.0 - Production")));
   }
 
   private Map<String, String> getAdditionalProperties(final String algorithm) {
@@ -76,7 +80,7 @@ public class NneOracleDestinationAcceptanceTest extends UnencryptedOracleDestina
                 clone.get("host").asText(),
                 clone.get("port").asInt(),
                 clone.get("sid").asText()),
-            getAdditionalProperties(algorithm)));
+            getAdditionalProperties(algorithm), Duration.ofMinutes(5)));
 
     final String networkServiceBanner = "SELECT sys_context('USERENV', 'NETWORK_PROTOCOL') as network_protocol FROM dual";
     final List<JsonNode> collect = database.queryJsons(networkServiceBanner);

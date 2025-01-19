@@ -1,56 +1,17 @@
 /*
- * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2023 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.integrations.source.tidb;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableMap;
-import com.mysql.cj.MysqlType;
+import io.airbyte.cdk.integrations.source.jdbc.test.JdbcSourceAcceptanceTest;
 import io.airbyte.commons.json.Jsons;
-import io.airbyte.db.Database;
-import io.airbyte.integrations.source.jdbc.AbstractJdbcSource;
-import io.airbyte.integrations.source.jdbc.test.JdbcSourceAcceptanceTest;
-import org.junit.jupiter.api.*;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.tidb.TiDBContainer;
 
-class TiDBJdbcSourceAcceptanceTest extends JdbcSourceAcceptanceTest {
+class TiDBJdbcSourceAcceptanceTest extends JdbcSourceAcceptanceTest<TiDBSource, TiDBTestDatabase> {
 
-  protected static GenericContainer container;
-  protected static String USER = "root";
-  protected static String DATABASE = "test";
-
-  protected Database database;
-
-  @BeforeEach
-  public void setup() throws Exception {
-    container = new GenericContainer(DockerImageName.parse("pingcap/tidb:nightly"))
-        .withExposedPorts(4000);
-    container.start();
-
-    config = Jsons.jsonNode(ImmutableMap.builder()
-        .put("host", "127.0.0.1")
-        .put("port", container.getFirstMappedPort())
-        .put("username", USER)
-        .put("database", DATABASE)
-        // .put("ssl", true)
-        .build());
-
-    super.setup();
-  }
-
-  @AfterEach
-  void tearDownTiDB() throws Exception {
-    container.close();
-    container.stop();
-    super.tearDown();
-  }
-
-  @Override
-  public AbstractJdbcSource<MysqlType> getSource() {
-    return new TiDBSource();
-  }
+  private final TiDBContainer container = TiDBTestDatabase.container();
 
   @Override
   public boolean supportsSchemas() {
@@ -58,23 +19,18 @@ class TiDBJdbcSourceAcceptanceTest extends JdbcSourceAcceptanceTest {
   }
 
   @Override
-  public JsonNode getConfig() {
-    return Jsons.clone(config);
+  public JsonNode config() {
+    return Jsons.clone(testdb.testConfigBuilder().build());
   }
 
   @Override
-  public String getDriverClass() {
-    return TiDBSource.DRIVER_CLASS;
-  }
-
-  @Override
-  public AbstractJdbcSource<MysqlType> getJdbcSource() {
+  protected TiDBSource source() {
     return new TiDBSource();
   }
 
-  @AfterAll
-  static void cleanUp() {
-    container.close();
+  @Override
+  protected TiDBTestDatabase createTestDatabase() {
+    return new TiDBTestDatabase(container).initialized();
   }
 
 }

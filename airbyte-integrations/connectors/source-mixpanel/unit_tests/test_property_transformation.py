@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+# Copyright (c) 2023 Airbyte, Inc., all rights reserved.
 #
 
 """
@@ -7,11 +7,13 @@ Test case, when custom Export, ExportSchema properties contains names,
 that will conflict in further data normalization, like:
 `userName` and `username`
 """
+
 from unittest.mock import MagicMock
 
 import pytest
-from airbyte_cdk.models import SyncMode
 from source_mixpanel.streams import Export
+
+from airbyte_cdk.models import SyncMode
 
 from .utils import get_url_to_mock, setup_response
 
@@ -27,13 +29,14 @@ def export_response():
                 "$userName": "1",
                 "userName": "2",
                 "username": "3",
+                "time": 1485302410,
             },
         },
     )
 
 
-def test_export_stream_conflict_names(requests_mock, export_response):
-    stream = Export(authenticator=MagicMock())
+def test_export_stream_conflict_names(requests_mock, export_response, config):
+    stream = Export(authenticator=MagicMock(), **config)
     # Remove requests limit for test
     stream.reqs_per_hour_limit = 0
     requests_mock.register_uri("GET", get_url_to_mock(stream), export_response)
@@ -52,6 +55,7 @@ def test_export_stream_conflict_names(requests_mock, export_response):
             "userName",
             "_userName",
             "__username",
+            "time",
         ]
     )
     assert record["userName"] == "1"

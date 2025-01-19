@@ -1,19 +1,65 @@
-This is the first python custom source connector which is made for Timely.<br>
-To get started using this connector, you will be needing three things.<br>
+# Timely source connector
 
-  1. Account ID
-  2. Bearer Token
-  3. Start-date
+This directory contains the manifest-only connector for `source-timely`.
+This _manifest-only_ connector is not a Python package on its own, as it runs inside of the base `source-declarative-manifest` image.
 
-**Account ID** - Anyone who has admin access to Timelyapp.com you can find your account id, on the URL of your home page.
+For information about how to configure and use this connector within Airbyte, see [the connector's full documentation](https://docs.airbyte.com/integrations/sources/timely).
 
-Once, you have the account create an application on the Timelyapp.com where you need to specify your application name, this will generate Client_secret, Client_id, and redirect_uri.
+## Local development
 
-**Bearer Token** - To connect to the timelyapp API, I recommend using Postman or any other open source application that will get you the bearer token.
-For Postman users, it will ask you to enter Auth url, Token url, Client_id, Client secret. For more details on how to work with timelyapp, please click [here](https://dev.timelyapp.com/#introduction)
+We recommend using the Connector Builder to edit this connector.
+Using either Airbyte Cloud or your local Airbyte OSS instance, navigate to the **Builder** tab and select **Import a YAML**.
+Then select the connector's `manifest.yaml` file to load the connector into the Builder. You're now ready to make changes to the connector!
 
-**Start-date** - Please enter the start date in yy-mm--dd format to get the enteries from the start-date, this will pull all the record from the date entered to the present date.
+If you prefer to develop locally, you can follow the instructions below.
 
-That's all you need to get this connector working
+### Building the docker image
 
-**Working locally**- navigate yourself to the source-timely/sample_files/config.json, and enter the ID, token and date to get this connector working.
+You can build any manifest-only connector with `airbyte-ci`:
+
+1. Install [`airbyte-ci`](https://github.com/airbytehq/airbyte/blob/master/airbyte-ci/connectors/pipelines/README.md)
+2. Run the following command to build the docker image:
+
+```bash
+airbyte-ci connectors --name=source-timely build
+```
+
+An image will be available on your host with the tag `airbyte/source-timely:dev`.
+
+### Creating credentials
+
+**If you are a community contributor**, follow the instructions in the [documentation](https://docs.airbyte.com/integrations/sources/timely)
+to generate the necessary credentials. Then create a file `secrets/config.json` conforming to the `spec` object in the connector's `manifest.yaml` file.
+Note that any directory named `secrets` is gitignored across the entire Airbyte repo, so there is no danger of accidentally checking in sensitive information.
+
+### Running as a docker container
+
+Then run any of the standard source connector commands:
+
+```bash
+docker run --rm airbyte/source-timely:dev spec
+docker run --rm -v $(pwd)/secrets:/secrets airbyte/source-timely:dev check --config /secrets/config.json
+docker run --rm -v $(pwd)/secrets:/secrets airbyte/source-timely:dev discover --config /secrets/config.json
+docker run --rm -v $(pwd)/secrets:/secrets -v $(pwd)/integration_tests:/integration_tests airbyte/source-timely:dev read --config /secrets/config.json --catalog /integration_tests/configured_catalog.json
+```
+
+### Running the CI test suite
+
+You can run our full test suite locally using [`airbyte-ci`](https://github.com/airbytehq/airbyte/blob/master/airbyte-ci/connectors/pipelines/README.md):
+
+```bash
+airbyte-ci connectors --name=source-timely test
+```
+
+## Publishing a new version of the connector
+
+If you want to contribute changes to `source-timely`, here's how you can do that:
+1. Make your changes locally, or load the connector's manifest into Connector Builder and make changes there.
+2. Make sure your changes are passing our test suite with `airbyte-ci connectors --name=source-timely test`
+3. Bump the connector version (please follow [semantic versioning for connectors](https://docs.airbyte.com/contributing-to-airbyte/resources/pull-requests-handbook/#semantic-versioning-for-connectors)):
+    - bump the `dockerImageTag` value in in `metadata.yaml`
+4. Make sure the connector documentation and its changelog is up to date (`docs/integrations/sources/timely.md`).
+5. Create a Pull Request: use [our PR naming conventions](https://docs.airbyte.com/contributing-to-airbyte/resources/pull-requests-handbook/#pull-request-title-convention).
+6. Pat yourself on the back for being an awesome contributor.
+7. Someone from Airbyte will take a look at your PR and iterate with you to merge it into master.
+8. Once your PR is merged, the new version of the connector will be automatically published to Docker Hub and our connector registry.

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+# Copyright (c) 2023 Airbyte, Inc., all rights reserved.
 #
 
 
@@ -9,6 +9,9 @@ from typing import Any, Dict, List, Mapping
 
 import docker
 import pytest
+from destination_sftp_json import DestinationSftpJson
+from destination_sftp_json.client import SftpClient
+
 from airbyte_cdk import AirbyteLogger
 from airbyte_cdk.models import (
     AirbyteMessage,
@@ -22,8 +25,6 @@ from airbyte_cdk.models import (
     SyncMode,
     Type,
 )
-from destination_sftp_json import DestinationSftpJson
-from destination_sftp_json.client import SftpClient
 
 
 @pytest.fixture(scope="module")
@@ -59,13 +60,13 @@ def configured_catalog_fixture() -> ConfiguredAirbyteCatalog:
     }
 
     append_stream = ConfiguredAirbyteStream(
-        stream=AirbyteStream(name="append_stream", json_schema=stream_schema),
+        stream=AirbyteStream(name="append_stream", json_schema=stream_schema, supported_sync_modes=[SyncMode.incremental]),
         sync_mode=SyncMode.incremental,
         destination_sync_mode=DestinationSyncMode.append,
     )
 
     overwrite_stream = ConfiguredAirbyteStream(
-        stream=AirbyteStream(name="overwrite_stream", json_schema=stream_schema),
+        stream=AirbyteStream(name="overwrite_stream", json_schema=stream_schema, supported_sync_modes=[SyncMode.incremental]),
         sync_mode=SyncMode.incremental,
         destination_sync_mode=DestinationSyncMode.overwrite,
     )

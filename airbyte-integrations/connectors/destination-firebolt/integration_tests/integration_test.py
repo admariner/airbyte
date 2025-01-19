@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+# Copyright (c) 2023 Airbyte, Inc., all rights reserved.
 #
 
 import random
@@ -9,6 +9,10 @@ from json import dumps, load
 from typing import Dict
 from unittest.mock import MagicMock
 
+from destination_firebolt.destination import DestinationFirebolt, establish_connection
+from firebolt.common.exception import FireboltError
+from pytest import fixture, mark, raises
+
 from airbyte_cdk.models import AirbyteMessage, AirbyteRecordMessage, Status, Type
 from airbyte_cdk.models.airbyte_protocol import (
     AirbyteStream,
@@ -17,9 +21,6 @@ from airbyte_cdk.models.airbyte_protocol import (
     DestinationSyncMode,
     SyncMode,
 )
-from destination_firebolt.destination import DestinationFirebolt, establish_connection
-from firebolt.common.exception import FireboltError
-from pytest import fixture, mark, raises
 
 
 @fixture(scope="module")
@@ -60,7 +61,7 @@ def table_schema() -> str:
 @fixture
 def configured_catalogue(test_table_name: str, table_schema: str) -> ConfiguredAirbyteCatalog:
     append_stream = ConfiguredAirbyteStream(
-        stream=AirbyteStream(name=test_table_name, json_schema=table_schema),
+        stream=AirbyteStream(name=test_table_name, json_schema=table_schema, supported_sync_modes=[SyncMode.incremental]),
         sync_mode=SyncMode.incremental,
         destination_sync_mode=DestinationSyncMode.append,
     )
